@@ -379,45 +379,51 @@ async def send_short_result(context, chat_id, item):
         logger.error(f"Error sending short: {e}")
 
 # ─── Main Execution ──────────────────────────────────────────────────────────
-def main():
-    if not TELEGRAM_BOT_TOKEN:
-        logger.error("TELEGRAM_BOT_TOKEN is not set!")
-        sys.exit(1)
+import asyncio
+import sys
 
-    logger.info("Starting AI Shorts Telegram Bot...")
-    application = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
+# ... your other code ...
 
-    # Add handlers
-    application.add_handler(CommandHandler("start", start_command))
-    application.add_handler(CommandHandler("help", help_command))
-    application.add_handler(CommandHandler("status", status_command))
-    application.add_handler(CommandHandler("cancel", cancel_command))
+async def main_async():
+    """Asynchronous main function to properly handle Python 3.14 event loops"""
+    # 1. Initialize your application (replace this with your actual build step)
+    # application = Application.builder().token(YOUR_TOKEN).build()
     
-    application.add_handler(MessageHandler(filters.VIDEO | filters.Document.VIDEO, handle_video_upload))
-    application.add_handler(MessageHandler(
-        filters.Document.MimeType("video/mp4") |
-        filters.Document.MimeType("video/x-matroska") |
-        filters.Document.MimeType("video/avi") |
-        filters.Document.MimeType("video/quicktime") |
-        filters.Document.MimeType("video/webm"),
-        handle_video_upload
-    ))
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text_message))
+    # 2. Run the polling bot inside the active loop
+    # run_polling is normally synchronous but can be run within an existing loop.
+    # To prevent event loop conflicts, we run it using the application's native async cycle:
+    async with application:
+        await application.initialize()
+        await application.start()
+        await application.updater.start_polling(allowed_updates=Update.ALL_TYPES)
+        logger.info("Bot is running in async mode! Press Ctrl+C to stop.")
+        
+        # Keep the bot running until interrupted
+        try:
+            while True:
+                await asyncio.sleep(3600)
+        except (KeyboardInterrupt, SystemExit):
+            pass
+        finally:
+            await application.updater.stop()
+            await application.stop()
+            await application.shutdown()
 
-    # Set bot commands
-    async def post_init(application):
-        await application.bot.set_my_commands([
-            BotCommand("start", "Start the bot & show welcome"),
-            BotCommand("help", "Show help guide"),
-            BotCommand("status", "Check bot & job status"),
-            BotCommand("cancel", "Cancel current processing"),
-        ])
+def main():
+    logger.info("Starting AI Shorts Telegram Bot...")
+    
+    # Start your dummy server thread/process here (if you are using one)
+    # start_dummy_server() 
 
-    application.post_init = post_init
-
-    # Run polling loop
-    logger.info("Bot is running! Press Ctrl+C to stop.")
-    application.run_polling(allowed_updates=Update.ALL_TYPES)
+    # Explicitly run our async loop on Python 3.14+
+    try:
+        asyncio.run(main_async())
+    except KeyboardInterrupt:
+        logger.info("Bot stopped by user.")
+    except Exception as e:
+        logger.critical(f"Bot crashed: {e}", exc_info=True)
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
+            
