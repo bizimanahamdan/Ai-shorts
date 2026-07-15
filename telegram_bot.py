@@ -1,4 +1,22 @@
 import os
+import logging
+
+# Get the directory where your script is running
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+LOG_DIR = os.path.join(BASE_DIR, "logs")
+
+# Automatically create the "logs" folder if it doesn't exist
+os.makedirs(LOG_DIR, exist_ok=True)
+
+LOG_FILE = os.path.join(LOG_DIR, "bot.log")
+
+logging.basicConfig(
+    filename=LOG_FILE,
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+
+import os
 from http.server import SimpleHTTPRequestHandler
 from socketserver import TCPServer
 import threading
