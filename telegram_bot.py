@@ -379,23 +379,19 @@ async def send_short_result(context, chat_id, item):
         logger.error(f"Error sending short: {e}")
 
 # ─── Main Execution ──────────────────────────────────────────────────────────
+
 import asyncio
 import sys
 
-# ... your other code ...
+# --- KEEP ALL YOUR REGISTER_HANDLERS, COMMANDS, AND GLOBAL VARIABLES ABOVE THIS LINE ---
 
-async def main_async():
+async def main_async(app_instance):
     """Asynchronous main function to properly handle Python 3.14 event loops"""
-    # 1. Initialize your application (replace this with your actual build step)
-    # application = Application.builder().token(YOUR_TOKEN).build()
-    
-    # 2. Run the polling bot inside the active loop
-    # run_polling is normally synchronous but can be run within an existing loop.
-    # To prevent event loop conflicts, we run it using the application's native async cycle:
-    async with application:
-        await application.initialize()
-        await application.start()
-        await application.updater.start_polling(allowed_updates=Update.ALL_TYPES)
+    # Run the polling bot inside the active loop
+    async with app_instance:
+        await app_instance.initialize()
+        await app_instance.start()
+        await app_instance.updater.start_polling(allowed_updates=Update.ALL_TYPES)
         logger.info("Bot is running in async mode! Press Ctrl+C to stop.")
         
         # Keep the bot running until interrupted
@@ -405,19 +401,27 @@ async def main_async():
         except (KeyboardInterrupt, SystemExit):
             pass
         finally:
-            await application.updater.stop()
-            await application.stop()
-            await application.shutdown()
+            await app_instance.updater.stop()
+            await app_instance.stop()
+            await app_instance.shutdown()
 
 def main():
     logger.info("Starting AI Shorts Telegram Bot...")
-    
-    # Start your dummy server thread/process here (if you are using one)
-    # start_dummy_server() 
 
-    # Explicitly run our async loop on Python 3.14+
+    # 1. Build your application inside synchronous main first (as your original code did)
+    # Ensure this matches whatever variables/token you set up originally!
+    application = (
+        Application.builder()
+        .token(TELEGRAM_BOT_TOKEN)
+        .build()
+    )
+
+    # 2. Register all your handlers (make sure to call your registration function here)
+    # (For example, if you have register_handlers(application), put it here)
+
+    # 3. Explicitly run our async loop, passing the built application to it
     try:
-        asyncio.run(main_async())
+        asyncio.run(main_async(application))
     except KeyboardInterrupt:
         logger.info("Bot stopped by user.")
     except Exception as e:
@@ -426,4 +430,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-            
+    
