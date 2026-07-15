@@ -37,6 +37,11 @@ def download_video(url_or_path, output_path="/home/ubuntu/AI-Shorts-Bot/download
         "-f", "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
         "--merge-output-format", "mp4",
         "--output", os.path.join(output_path, "%(title)s.%(ext)s"),
+        "--extractor-args", "youtube:player_client=android,web",
+        "--add-header", "User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "--add-header", "Accept:text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        "--add-header", "Accept-Language:en-US,en;q=0.5",
+        "--no-check-certificate",
         url_or_path
     ]
 
