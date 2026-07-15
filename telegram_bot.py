@@ -387,7 +387,6 @@ import sys
 
 async def main_async(app_instance):
     """Asynchronous main function to properly handle Python 3.14 event loops"""
-    # Run the polling bot inside the active loop
     async with app_instance:
         await app_instance.initialize()
         await app_instance.start()
@@ -406,20 +405,52 @@ async def main_async(app_instance):
             await app_instance.shutdown()
 
 def main():
+    """Start the bot."""
+    if not TELEGRAM_BOT_TOKEN:
+        logger.error("TELEGRAM_BOT_TOKEN environment variable is not set!")
+        print("ERROR: Please set the TELEGRAM_BOT_TOKEN environment variable.")
+        print("Get a token from @BotFather on Telegram.")
+        sys.exit(1)
+
+    # Ensure directories exist
+    for dir_name in ["downloads", "transcripts", "clips", "captions", "exports", "thumbnails", "logs"]:
+        os.makedirs(os.path.join(BASE_DIR, dir_name), exist_ok=True)
+
     logger.info("Starting AI Shorts Telegram Bot...")
 
-    # 1. Build your application inside synchronous main first (as your original code did)
-    # Ensure this matches whatever variables/token you set up originally!
-    application = (
-        Application.builder()
-        .token(TELEGRAM_BOT_TOKEN)
-        .build()
-    )
+    # Build application
+    application = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
 
-    # 2. Register all your handlers (make sure to call your registration function here)
-    # (For example, if you have register_handlers(application), put it here)
+    # Add command handlers
+    application.add_handler(CommandHandler("start", start_command))
+    application.add_handler(CommandHandler("help", help_command))
+    application.add_handler(CommandHandler("status", status_command))
+    application.add_handler(CommandHandler("cancel", cancel_command))
 
-    # 3. Explicitly run our async loop, passing the built application to it
+    # Add message handlers
+    application.add_handler(MessageHandler(filters.VIDEO | filters.Document.VIDEO, handle_video_upload))
+    application.add_handler(MessageHandler(
+        filters.Document.MimeType("video/mp4") |
+        filters.Document.MimeType("video/x-matroska") |
+        filters.Document.MimeType("video/avi") |
+        filters.Document.MimeType("video/quicktime") |
+        filters.Document.MimeType("video/webm"),
+        handle_video_upload
+    ))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text_message))
+
+    # Set bot commands
+    async def post_init(application):
+        await application.bot.set_my_commands([
+            BotCommand("start", "Start the bot & show welcome"),
+            BotCommand("help", "Show help guide"),
+            BotCommand("status", "Check bot & job status"),
+            BotCommand("cancel", "Cancel current processing"),
+        ])
+
+    application.post_init = post_init
+
+    # Run the bot explicitly within our custom loop handler to prevent Python 3.14 loop crashes
     try:
         asyncio.run(main_async(application))
     except KeyboardInterrupt:
@@ -427,6 +458,7 @@ def main():
     except Exception as e:
         logger.critical(f"Bot crashed: {e}", exc_info=True)
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()
