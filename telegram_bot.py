@@ -1,3 +1,20 @@
+import os
+from http.server import SimpleHTTPRequestHandler
+from socketserver import TCPServer
+import threading
+
+# 1. This starts a tiny web server in the background so Render stays happy
+def run_dummy_server():
+    port = int(os.environ.get("PORT", 8080))
+    server = TCPServer(("0.0.0.0", port), SimpleHTTPRequestHandler)
+    print(f"Dummy server running on port {port}")
+    server.serve_forever()
+
+# Start the dummy server in a separate thread
+threading.Thread(target=run_dummy_server, daemon=True).start()
+
+# ... (The rest of your original telegram_bot.py code goes here!)
+
 """
 AI Shorts Telegram Bot
 ======================
