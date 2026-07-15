@@ -15,23 +15,38 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
-
 import os
+import threading
+import logging
 from http.server import SimpleHTTPRequestHandler
 from socketserver import TCPServer
-import threading
 
-# 1. This starts a tiny web server in the background so Render stays happy
+# Set up logging dynamically (your working relative-path setup)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+LOG_DIR = os.path.join(BASE_DIR, "logs")
+os.makedirs(LOG_DIR, exist_ok=True)
+LOG_FILE = os.path.join(LOG_DIR, "bot.log")
+
+logging.basicConfig(
+    filename=LOG_FILE,
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+
+# --- NON-BLOCKING DUMMY SERVER FOR RENDER ---
 def run_dummy_server():
     port = int(os.environ.get("PORT", 8080))
-    server = TCPServer(("0.0.0.0", port), SimpleHTTPRequestHandler)
-    print(f"Dummy server running on port {port}")
-    server.serve_forever()
+    # Allow port reuse to avoid address-already-in-use errors
+    TCPServer.allow_reuse_address = True
+    with TCPServer(("0.0.0.0", port), SimpleHTTPRequestHandler) as httpd:
+        print(f"Dummy server running on port {port}")
+        httpd.serve_forever()
 
-# Start the dummy server in a separate thread
+# Start the dummy server in a separate thread BEFORE doing anything else
 threading.Thread(target=run_dummy_server, daemon=True).start()
+# ---------------------------------------------
 
-# ... (The rest of your original telegram_bot.py code goes here!)
+# ... (The rest of your original telegram_bot.py code continues below!)
 
 """
 AI Shorts Telegram Bot
